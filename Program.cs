@@ -1,10 +1,19 @@
-using Lithium.Api.Gallery.Controllers;
+using Lithium.Api.Blog;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<GalleryConfiguration>(sp =>
     builder.Configuration.GetSection("Gallery").Get<GalleryConfiguration>());
+builder.Services.AddSingleton<BlogConfiguration>(sp =>
+    builder.Configuration.GetSection("Blog").Get<BlogConfiguration>());
+builder.Services.AddScoped<BlogContext>(sp =>
+    new BlogContext(
+        sp.GetRequiredService<BlogConfiguration>().DatabasePath));
+builder.Services.AddScoped<IBlogPostRepository>(sp => 
+    throw new NotImplementedException());
+builder.Services.AddScoped<IBlogService>(sp => 
+    throw new NotImplementedException());
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
