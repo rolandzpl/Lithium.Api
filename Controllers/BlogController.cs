@@ -30,7 +30,7 @@ public class BlogController : ControllerBase
     }
 
     [HttpGet("/posts/{postId}")]
-    public BlogPostFullDto? GetBlogPost(string postId) =>
+    public BlogPostFullDto? GetBlogPost(Guid postId) =>
         repository
             .GetBlogPosts(FilterByPostId(postId))
             .Select(_ => new BlogPostFullDto
@@ -74,7 +74,7 @@ public class BlogController : ControllerBase
 
 public class BlogPostDto
 {
-    public string PostId { get; init; }
+    public Guid PostId { get; init; }
     public string Title { get; init; }
     public string Shortcut { get; init; }
     public DateTime DateCreated { get; init; }

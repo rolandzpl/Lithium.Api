@@ -72,7 +72,7 @@ class BlogPostFilters
     public static Specification<BlogPost> FilterAll(string blogId) =>
         new AdHocSpecification<BlogPost>(_ => _.BlogId == blogId);
 
-    public static Specification<BlogPost> FilterByPostId(string postId) =>
+    public static Specification<BlogPost> FilterByPostId(Guid postId) =>
         new AdHocSpecification<BlogPost>(_ => _.PostId == postId);
 }
 
@@ -115,4 +115,6 @@ public class ChangedBlogPostDto
 
 public class NewBlogPostDto
 {
+    public string Title;
+    public string CreatedBy;
 }
