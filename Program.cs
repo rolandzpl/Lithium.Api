@@ -1,5 +1,6 @@
 using Lithium.Api.Blog;
 using Microsoft.AspNetCore.HttpLogging;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,13 +8,13 @@ builder.Services.AddSingleton<GalleryConfiguration>(sp =>
     builder.Configuration.GetSection("Gallery").Get<GalleryConfiguration>());
 builder.Services.AddSingleton<BlogConfiguration>(sp =>
     builder.Configuration.GetSection("Blog").Get<BlogConfiguration>());
-builder.Services.AddScoped<BlogContext>(sp =>
-    new BlogContext(
-        sp.GetRequiredService<BlogConfiguration>().DatabasePath));
-builder.Services.AddScoped<IBlogPostRepository>(sp => 
-    throw new NotImplementedException());
-builder.Services.AddScoped<IBlogService>(sp => 
-    throw new NotImplementedException());
+builder.Services.AddDbContext<BlogContext>((sp, opt) =>
+{
+    var cfg = sp.GetRequiredService<BlogConfiguration>();
+    opt.UseSqlite($"Data Source={cfg.DatabasePath}");
+});
+builder.Services.AddScoped<IBlogPostRepository, BlogPostRepository>();
+builder.Services.AddScoped<IBlogService, BlogService>();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -43,11 +44,7 @@ app.Configuration.Bind("Gallery", galleryConfiguration);
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(galleryConfiguration.RootDirectory),
-    RequestPath = galleryConfiguration.BaseUrl,
-    OnPrepareResponse = _ =>
-    {
-        var fi = _.File;
-    }
+    RequestPath = galleryConfiguration.BaseUrl
 });
 app.UseHttpsRedirection();
 app.UseAuthorization();
