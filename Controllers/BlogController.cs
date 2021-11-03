@@ -1,4 +1,5 @@
 using Lithium.Api.Blog;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using static Lithium.Api.Blog.BlogPostFilters;
 
@@ -20,68 +21,36 @@ public class BlogController : ControllerBase
     [HttpPost("/blog/{blogId}/posts")]
     public void CreateNewBlogPost(string blogId, NewBlogPostDto post)
     {
-        blogService.AddPost(post);
+        var cfg = TypeAdapterConfig<NewBlogPostDto, Blog.NewBlogPostDto>
+            .NewConfig()
+            .Map(_ => _.BlogId, _ => blogId);
+        blogService.AddPost(post.Adapt<Blog.NewBlogPostDto>(cfg.Config));
     }
 
     [HttpPut("/blog/{blogId}/posts")]
     public void ChangeBlogPost(string blogId, ChangedBlogPostDto post)
     {
-        blogService.ChangePost(post);
+        blogService.ChangePost(post.Adapt<Blog.ChangedBlogPostDto>());
     }
 
     [HttpGet("/posts/{postId}")]
     public BlogPostFullDto? GetBlogPost(Guid postId) =>
         repository
             .GetBlogPosts(FilterByPostId(postId))
-            .Select(_ => new BlogPostFullDto
-            {
-                PostId = _.PostId,
-                Title = _.Title,
-                Shortcut = _.Shortcut,
-                DateCreated = _.DateCreated,
-                CreatedBy = _.CreatedBy
-            })
+            .Select(_ => _.Adapt<BlogPostFullDto>())
             .SingleOrDefault();
 
     [HttpGet("/blog/{blogId}/posts/all")]
     public IEnumerable<BlogPostDto> GetAllBlogPosts(string blogId) =>
         repository
             .GetBlogPosts(FilterAll(blogId))
-            .Select(_ => new BlogPostDto
-            {
-                PostId = _.PostId,
-                Title = _.Title,
-                Shortcut = _.Shortcut,
-                DateCreated = _.DateCreated,
-                CreatedBy = _.CreatedBy
-            })
+            .Select(_ => _.Adapt<BlogPostDto>())
             .ToList();
 
     [HttpGet("/blog/{blogId}/posts")]
     public IEnumerable<BlogPostDto> GetBlogPosts(string blogId) =>
         repository
             .GetBlogPosts(FilterDefault(blogId))
-            .Select(_ => new BlogPostDto
-            {
-                PostId = _.PostId,
-                Title = _.Title,
-                Shortcut = _.Shortcut,
-                DateCreated = _.DateCreated,
-                CreatedBy = _.CreatedBy
-            })
+            .Select(_ => _.Adapt<BlogPostDto>())
             .ToList();
-}
-
-public class BlogPostDto
-{
-    public Guid PostId { get; init; }
-    public string Title { get; init; }
-    public string Shortcut { get; init; }
-    public DateTime DateCreated { get; init; }
-    public string CreatedBy { get; init; }
-}
-
-public class BlogPostFullDto : BlogPostDto
-{
-    public string Content { get; init; }
 }
