@@ -40,7 +40,7 @@ public class BlogService : IBlogService
         }
         if (post.Content != null)
         {
-            existingPost.Shortcut = post.Content;
+            existingPost.Content = post.Content;
         }
         db.SaveChanges();
     }
