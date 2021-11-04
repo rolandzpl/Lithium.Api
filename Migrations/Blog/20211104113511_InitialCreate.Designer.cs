@@ -6,10 +6,10 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
-namespace Lithium.Api.Gallery.Migrations
+namespace Lithium.Api.Migrations.Blog
 {
     [DbContext(typeof(BlogContext))]
-    [Migration("20211103101933_InitialCreate")]
+    [Migration("20211104113511_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

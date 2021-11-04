@@ -1,68 +1,52 @@
-using System.Text.RegularExpressions;
+using Lithium.Api.Controllers.Dto;
+using Lithium.Api.Gallery;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
-using SixLabors.ImageSharp;
+using NewGalleryDto = Lithium.Api.Controllers.Dto.NewGalleryDto;
 
-namespace Lithium.Api.Gallery.Controllers;
+namespace Lithium.Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
 public class GalleryController : ControllerBase
 {
-    private readonly GalleryConfiguration configuration;
+    private readonly IGallerySevice galleryService;
+    private readonly IGalleryRepository repository;
     private readonly ILogger<GalleryController> logger;
 
-    public GalleryController(GalleryConfiguration configuration, ILogger<GalleryController> logger)
+    public GalleryController(IGallerySevice galleryService, IGalleryRepository repository, ILogger<GalleryController> logger)
     {
-        this.configuration = configuration;
+        this.galleryService = galleryService;
+        this.repository = repository;
         this.logger = logger;
     }
 
     [HttpGet("/galleries")]
-    public IEnumerable<GalleryInfo> GetGalleries() =>
-        Directory
-            .GetDirectories(configuration.RootDirectory)
-            .Select(_ => new GalleryInfo
-            {
-                GalleryId = Path.GetFileName(_),
-                Title = ""
-            });
+    public IEnumerable<GalleryDto> GetGalleries()
+    {
+        return repository
+            .GetGalleries(GalleryFilters.FilterDefault())
+            .Select(_ => _.Adapt<GalleryDto>())
+            .ToList();
+    }
+
+    [HttpPost("/galleries")]
+    public void CreateGallery(NewGalleryDto gallery)
+    {
+        galleryService.CreateGallery(gallery.Adapt<Gallery.NewGalleryDto>());
+    }
 
     [HttpGet("/galleries/{galleryId}")]
-    public IEnumerable<ImageRef> Get(string galleryId) =>
-        Directory
-            .GetFiles(Path.Combine(configuration.RootDirectory, galleryId), "*.jpg")
-            .Where(IsNotThumbnail)
-            .Select(_ =>
-            {
-                var imageInfo = Image.Identify(_);
-                logger.LogDebug($"Image: {_}, height: {imageInfo.Height}, width: {imageInfo.Width}");
-                var originalFileName = Path.GetFileName(_);
-                var thumbnailFileName = $"{Path.GetFileNameWithoutExtension(_)}_thumb{Path.GetExtension(_)}";
-                return new ImageRef
-                {
-                    Thumbnail = $"{configuration.BaseUrl}/{galleryId}/{thumbnailFileName}",
-                    Src = $"{configuration.BaseUrl}/{galleryId}/{originalFileName}",
-                    Width = imageInfo.Width,
-                    Height = imageInfo.Height
-                };
-            });
-
-    private bool IsNotThumbnail(string path)
+    public IEnumerable<ImageDto> GetImages(Guid galleryId)
     {
-        return !Regex.Match(path, ".+_thumb\\..+").Success;
+        var gallery = repository
+            .GetGalleryById(galleryId);
+        if (gallery == null)
+        {
+            throw new HttpResponseException(StatusCodes.Status404NotFound, galleryId);
+        }
+        return gallery.Images
+            .Select(img => img.Adapt<ImageDto>())
+            .ToList();
     }
-}
-
-public class ImageRef
-{
-    public string? Thumbnail { get; init; }
-    public string? Src { get; init; }
-    public int? Width { get; init; }
-    public int? Height { get; init; }
-}
-
-public class GalleryInfo
-{
-    public string? GalleryId { get; init; }
-    public string? Title { get; init; }
 }

@@ -1,4 +1,6 @@
+using Lithium.Api;
 using Lithium.Api.Blog;
+using Lithium.Api.Gallery;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -13,9 +15,17 @@ builder.Services.AddDbContext<BlogContext>((sp, opt) =>
     var cfg = sp.GetRequiredService<BlogConfiguration>();
     opt.UseSqlite($"Data Source={cfg.DatabasePath}");
 });
+builder.Services.AddDbContext<GalleryContext>((sp, opt) =>
+{
+    var cfg = sp.GetRequiredService<GalleryConfiguration>();
+    opt.UseSqlite($"Data Source={cfg.DatabasePath}");
+});
 builder.Services.AddScoped<IBlogPostRepository, BlogPostRepository>();
 builder.Services.AddScoped<IBlogService, BlogService>();
-builder.Services.AddControllers();
+builder.Services.AddScoped<IGalleryRepository, GalleryRepository>();
+builder.Services.AddScoped<IGallerySevice, GallerySevice>();
+builder.Services.AddControllers(opt =>
+    opt.Filters.Add(new HttpResponseExceptionFilter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpLogging(logging =>

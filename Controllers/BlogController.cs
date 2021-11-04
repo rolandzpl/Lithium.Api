@@ -1,9 +1,12 @@
 using Lithium.Api.Blog;
+using Lithium.Api.Controllers.Dto;
 using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using static Lithium.Api.Blog.BlogPostFilters;
+using ChangedBlogPostDto = Lithium.Api.Controllers.Dto.ChangedBlogPostDto;
+using NewBlogPostDto = Lithium.Api.Controllers.Dto.NewBlogPostDto;
 
-namespace Lithium.Api.Gallery.Controllers;
+namespace Lithium.Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
@@ -34,11 +37,12 @@ public class BlogController : ControllerBase
     }
 
     [HttpGet("/posts/{postId}")]
-    public BlogPostFullDto? GetBlogPost(Guid postId) =>
+    public BlogPostFullDto GetBlogPost(Guid postId) =>
         repository
             .GetBlogPosts(FilterByPostId(postId))
             .Select(_ => _.Adapt<BlogPostFullDto>())
-            .SingleOrDefault();
+            .SingleOrDefault()
+        ?? throw new HttpResponseException(StatusCodes.Status404NotFound, postId);
 
     [HttpGet("/blog/{blogId}/posts/all")]
     public IEnumerable<BlogPostDto> GetAllBlogPosts(string blogId) =>

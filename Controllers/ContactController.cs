@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Lithium.Api.Gallery.Controllers;
+namespace Lithium.Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]

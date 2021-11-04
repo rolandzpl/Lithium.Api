@@ -1,4 +1,4 @@
-namespace Lithium.Api.Gallery.Controllers;
+namespace Lithium.Api.Controllers.Dto;
 
 public class NewBlogPostDto
 {

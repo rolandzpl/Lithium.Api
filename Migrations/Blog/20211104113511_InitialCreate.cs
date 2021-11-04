@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-namespace Lithium.Api.Gallery.Migrations
+namespace Lithium.Api.Migrations.Blog
 {
     public partial class InitialCreate : Migration
     {

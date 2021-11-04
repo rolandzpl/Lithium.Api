@@ -1,14 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Lithium.Api.Gallery.Controllers;
+namespace Lithium.Api.Controllers;
 
 [ApiController]
 [Route("[controller]")]
 public class AccountController : ControllerBase
 {
-    private readonly ILogger<GalleryController> logger;
+    private readonly ILogger<OldGalleryController> logger;
 
-    public AccountController(ILogger<GalleryController> logger)
+    public AccountController(ILogger<OldGalleryController> logger)
     {
         this.logger = logger;
     }

@@ -21,3 +21,4 @@ class BlogPostFilters
     public static Specification<BlogPost> FilterByPostId(Guid postId) =>
         new AdHocSpecification<BlogPost>(_ => _.PostId == postId);
 }
+
