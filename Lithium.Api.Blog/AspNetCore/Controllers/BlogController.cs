@@ -24,42 +24,32 @@ public class BlogController : ControllerBase
     }
 
     [HttpPost("/blog/{blogId}/posts")]
-    public void CreateNewBlogPost(string blogId, NewBlogPostDto post)
-    {
-        var cfg = TypeAdapterConfig<NewBlogPostDto, Blog.NewBlogPostDto>
+    public void CreateNewBlogPost(string blogId, NewBlogPostDto post) =>
+        blogService.AddPost(post.Adapt<NewBlogPostDto>(GetTypeAdapterConfig(blogId)));
+
+    private TypeAdapterConfig GetTypeAdapterConfig(string blogId) =>
+        TypeAdapterConfig<NewBlogPostDto, Blog.NewBlogPostDto>
             .NewConfig()
             .Map(_ => _.BlogId, _ => blogId)
-            .Map(_ => _.CreatedBy, _ => User.Identity.Name);
-        blogService.AddPost(post.Adapt<Blog.NewBlogPostDto>(cfg.Config));
-    }
+            .Map(_ => _.CreatedBy, _ => User.Identity.Name)
+            .Config;
 
     [HttpPut("/blog/{blogId}/posts")]
-    public void ChangeBlogPost(string blogId, ChangedBlogPostDto post)
-    {
+    public void ChangeBlogPost(string blogId, ChangedBlogPostDto post) =>
         blogService.ChangePost(post.Adapt<Blog.ChangedBlogPostDto>());
-    }
 
     [AllowAnonymous]
     [HttpGet("/posts/{postId}")]
-    public BlogPostFullDto GetBlogPost(Guid postId) =>
-        repository
-            .GetBlogPosts(FilterByPostId(postId))
-            .Select(_ => _.Adapt<BlogPostFullDto>())
-            .SingleOrDefault()
+    public async Task<BlogPostFullDto> GetBlogPost(Guid postId) =>
+        (await repository.GetBlogPostsByIdAsync<BlogPostFullDto>(postId))
         ?? throw new HttpResponseException(StatusCodes.Status404NotFound, postId);
 
     [HttpGet("/blog/{blogId}/posts/all")]
-    public IEnumerable<BlogPostDto> GetAllBlogPosts(string blogId) =>
-        repository
-            .GetBlogPosts(FilterAll(blogId))
-            .Select(_ => _.Adapt<BlogPostDto>())
-            .ToList();
+    public async Task<IEnumerable<BlogPostDto>> GetAllBlogPosts(string blogId) =>
+        await repository.GetBlogPostsAsync<BlogPostDto>(FilterAll(blogId));
 
     [AllowAnonymous]
     [HttpGet("/blog/{blogId}/posts")]
-    public IEnumerable<BlogPostDto> GetBlogPosts(string blogId) =>
-        repository
-            .GetBlogPosts(FilterDefault(blogId))
-            .Select(_ => _.Adapt<BlogPostDto>())
-            .ToList();
+    public async Task<IEnumerable<BlogPostDto>> GetBlogPosts(string blogId) =>
+        await repository.GetBlogPostsAsync<BlogPostDto>(FilterDefault(blogId));
 }

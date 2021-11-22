@@ -4,6 +4,7 @@ namespace Lithium.Api.Galleries;
 
 public interface IGalleryRepository
 {
-    IEnumerable<Gallery> GetGalleries(Specification<Gallery> filter);
-    Gallery? GetGalleryById(Guid galleryId);
+    Task<DTO?> GetGalleryByIdAsync<DTO>(Guid galleryId);
+
+    Task<IEnumerable<DTO>> GetGalleriesAsync<DTO>(Specification<Gallery> filter);
 }

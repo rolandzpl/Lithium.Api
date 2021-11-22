@@ -2,7 +2,9 @@ using LinqSpecs;
 
 namespace Lithium.Api.Blog;
 
-public interface IBlogPostRepository : IRepository<BlogPost>
+public interface IBlogPostRepository
 {
-    IEnumerable<BlogPost> GetBlogPosts(Specification<BlogPost> filter);
+    Task<DTO?> GetBlogPostsByIdAsync<DTO>(Guid postId);
+
+    Task<IEnumerable<DTO>> GetBlogPostsAsync<DTO>(Specification<BlogPost> filter);
 }

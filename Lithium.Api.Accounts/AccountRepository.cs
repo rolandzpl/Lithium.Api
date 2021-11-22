@@ -1,4 +1,6 @@
 using LinqSpecs;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lithium.Api.Accounts;
 
@@ -11,9 +13,17 @@ public class AccountRepository : IAccountRepository
         this.db = db;
     }
 
-    public IEnumerable<Account> GetAccounts(Specification<Account> filter)
-    {
-        var set = db.Set<Account>();
-        return set.Where(filter).ToList();
-    }
+    public DbSet<Account> Accounts => db.Set<Account>();
+
+    public async Task<DTO?> GetAccountByLoginAsync<DTO>(string login) =>
+        await Accounts
+            .Where(_ => _.Login == login)
+            .ProjectToType<DTO>()
+            .SingleOrDefaultAsync();
+
+    public async Task<IEnumerable<DTO>> GetAccountsAsync<DTO>(Specification<Account> filter) =>
+        await Accounts
+            .Where(filter)
+            .ProjectToType<DTO>()
+            .ToListAsync();
 }

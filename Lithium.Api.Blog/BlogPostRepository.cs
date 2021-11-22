@@ -1,34 +1,31 @@
 using LinqSpecs;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lithium.Api.Blog;
 
-public class BlogPostRepository : Repository<BlogPost>, IBlogPostRepository
+public class BlogPostRepository : IBlogPostRepository
 {
-    public BlogPostRepository(BlogContext db) : base(db) { }
+    private readonly BlogContext db;
 
-    public IEnumerable<BlogPost> GetBlogPosts(Specification<BlogPost> filter)
+    public BlogPostRepository(BlogContext db)
     {
-        return base.GetItems(filter);
-    }
-}
-
-public interface IRepository<TEntity>
-{
-    IEnumerable<TEntity> GetItems(Specification<TEntity> filter);
-}
-
-public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
-{
-    protected readonly DbSet<TEntity> items;
-
-    public Repository(DbContext db)
-    {
-        this.items = db.Set<TEntity>();
+        this.db = db;
     }
 
-    public IEnumerable<TEntity> GetItems(Specification<TEntity> filter)
+    public DbSet<BlogPost> Posts => db.Set<BlogPost>();
+
+    public async Task<DTO?> GetBlogPostsByIdAsync<DTO>(Guid postId) =>
+        await Posts
+            .Where(_ => _.PostId == postId)
+            .ProjectToType<DTO>()
+            .SingleOrDefaultAsync();
+
+    public async Task<IEnumerable<DTO>> GetBlogPostsAsync<DTO>(Specification<BlogPost> filter)
     {
-        return items.Where(filter).ToList();
+        return await Posts
+            .Where(filter)
+            .ProjectToType<DTO>()
+            .ToListAsync();
     }
 }

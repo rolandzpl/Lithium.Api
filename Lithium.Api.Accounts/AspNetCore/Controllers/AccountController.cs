@@ -1,13 +1,13 @@
-using Lithium.Api.Accounts;
 using Microsoft.AspNetCore.Mvc;
-using NewAccountDto = Lithium.Api.Accounts.AspNetCore.Controllers.Dto.NewAccountDto;
-using AccountDto = Lithium.Api.Accounts.AspNetCore.Controllers.Dto.AccountDto;
 using Mapster;
 using LinqSpecs;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Lithium.Api.AspNetCore;
+using Microsoft.AspNetCore.Http;
+using Lithium.Api.Accounts.AspNetCore.Controllers.Dto;
 
 namespace Lithium.Api.Accounts.AspNetCore.Controllers;
 
@@ -33,19 +33,37 @@ public class AccountController : ControllerBase
         {
             return Unauthorized();
         }
-        var user = accountRepository
-            .GetAccounts(new AdHocSpecification<Account>(_ => _.Login == username))
-            .SingleOrDefault();
-        var claims = new List<Claim>
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            new ClaimsPrincipal(
+                new ClaimsIdentity(CollectClaims(await GetUserLogin(username)),
+                CookieAuthenticationDefaults.AuthenticationScheme)),
+            GetAuthProperties());
+        return Ok();
+    }
+
+    private async Task<string> GetUserLogin(string username) =>
+        (await accountRepository.GetAccountByLoginAsync<UserOnlyLoginDto>(username))?.Login;
+
+    class UserOnlyLoginDto
+    {
+        public string Login { get; init; }
+    }
+
+    private static List<Claim> CollectClaims(string login)
+    {
+        return new List<Claim>
         {
-            new Claim(ClaimTypes.Name, user.Login),
+            new Claim(ClaimTypes.Name, login),
             // new Claim("FullName", user.FullName),
             // new Claim(ClaimTypes.Role, "Editor"),
         };
-        var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-        var authProperties = new AuthenticationProperties
+    }
+
+    private static AuthenticationProperties GetAuthProperties() =>
+        new AuthenticationProperties
         {
-            //AllowRefresh = <bool>,
+            AllowRefresh = true,
             // Refreshing the authentication session should be allowed.
 
             //ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(10),
@@ -53,7 +71,7 @@ public class AccountController : ControllerBase
             // value set here overrides the ExpireTimeSpan option of 
             // CookieAuthenticationOptions set with AddCookie.
 
-            //IsPersistent = true,
+            IsPersistent = true,
             // Whether the authentication session is persisted across 
             // multiple requests. When used with cookies, controls
             // whether the cookie's lifetime is absolute (matching the
@@ -66,37 +84,21 @@ public class AccountController : ControllerBase
             // The full path or absolute URI to be used as an http 
             // redirect response value.
         };
-        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
-             new ClaimsPrincipal(claimsIdentity), authProperties);
-        return Ok();
-    }
 
     [HttpPost("/account/logout")]
-    public async Task Logout()
-    {
+    public async Task Logout() =>
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-    }
 
     [HttpGet("/account/{username}")]
-    public async Task<AccountDto> GetAccount(string username)
-    {
-        return accountRepository
-            .GetAccounts(new AdHocSpecification<Account>(_ => _.Login == username))
-            .Adapt<AccountDto>();
-    }
+    public async Task<AccountDto> GetAccount(string username) =>
+        await accountRepository.GetAccountByLoginAsync<AccountDto>(username)
+        ?? throw new HttpResponseException(StatusCodes.Status404NotFound, username);
 
     [HttpGet("/account")]
-    public async Task<IEnumerable<AccountDto>> GetAllAccounts()
-    {
-        return accountRepository
-            .GetAccounts(new AdHocSpecification<Account>(_ => true))
-            .Select(_ => _.Adapt<AccountDto>());
-    }
+    public async Task<IEnumerable<AccountDto>> GetAllAccounts() =>
+        await accountRepository.GetAccountsAsync<AccountDto>(new AdHocSpecification<Account>(_ => true));
 
-    [Authorize("AdminAccess")]
     [HttpPost("/account")]
-    public async Task AddAccount(NewAccountDto account)
-    {
+    public async Task AddAccount(NewAccountDto account) =>
         await accountService.AddAccountAsync(account.Adapt<Lithium.Api.Accounts.NewAccountDto>());
-    }
 }

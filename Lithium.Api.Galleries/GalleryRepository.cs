@@ -1,5 +1,6 @@
 using LinqSpecs;
 using Microsoft.EntityFrameworkCore;
+using Mapster;
 
 namespace Lithium.Api.Galleries;
 
@@ -12,18 +13,19 @@ public class GalleryRepository : IGalleryRepository
         this.db = db;
     }
 
-    public IEnumerable<Gallery> GetGalleries(Specification<Gallery> filter)
-    {
-        var set = db.Set<Gallery>();
-        return set.Where(filter).ToList();
-    }
+    public DbSet<Gallery> Galleries => db.Set<Gallery>();
 
-    public Gallery? GetGalleryById(Guid galleryId)
-    {
-        var set = db.Set<Gallery>();
-        return set
+    public async Task<IEnumerable<DTO>> GetGalleriesAsync<DTO>(Specification<Gallery> filter) =>
+        await Galleries
+            .Include(_ => _.Images)
+            .Where(filter)
+            .ProjectToType<DTO>()
+            .ToListAsync();
+
+    public async Task<DTO?> GetGalleryByIdAsync<DTO>(Guid galleryId) =>
+        await Galleries
             .Include(_ => _.Images)
             .Where(_ => _.Id == galleryId)
-            .SingleOrDefault();
-    }
+            .ProjectToType<DTO>()
+            .SingleOrDefaultAsync();
 }

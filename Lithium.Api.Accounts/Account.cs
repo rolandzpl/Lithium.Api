@@ -2,9 +2,11 @@ namespace Lithium.Api.Accounts;
 
 public class Account
 {
-    public string Login { get; set; }
-    public string Email { get; set; }
-    public byte[] PasswordChecksum { get; set; }
+    public string Login { get; init; }
+
+    public string Email { get; init; }
+
+    public byte[] PasswordChecksum { get; init; }
 
     public List<Group> Groups { get; } = new List<Group>();
 }

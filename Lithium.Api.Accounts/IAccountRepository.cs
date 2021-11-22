@@ -4,5 +4,7 @@ namespace Lithium.Api.Accounts;
 
 public interface IAccountRepository
 {
-    IEnumerable<Account> GetAccounts(Specification<Account> filter);
+    Task<DTO?> GetAccountByLoginAsync<DTO>(string login);
+    
+    Task<IEnumerable<DTO>> GetAccountsAsync<DTO>(Specification<Account> filter);
 }

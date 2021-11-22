@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
+using Mapster;
+using Microsoft.EntityFrameworkCore;
 
 namespace Lithium.Api.Accounts;
 
@@ -12,10 +14,11 @@ public class AccountService : IAccountService
         this.db = db;
     }
 
+    public DbSet<Account> Accounts => db.Set<Account>();
+
     public async Task AddAccountAsync(NewAccountDto account)
     {
-        var accounts = db.Set<Account>();
-        accounts.Add(new Account
+        Accounts.Add(new Account
         {
             Login = account.Login,
             Email = account.Email,
@@ -26,26 +29,30 @@ public class AccountService : IAccountService
 
     public async Task<bool> ValidatePasswordAsync(string login, string password)
     {
-        var accounts = db.Set<Account>();
-        var account = accounts.Find(login);
-        return account != null &&
-            account.PasswordChecksum.SequenceEqual(await ComputeChecksum(password));
+        var passwordChecksum = (await Accounts
+            .Where(_ => _.Login == login)
+            .ProjectToType<UserPasswordChecksumOnly>()
+            .SingleOrDefaultAsync())
+            ?.PasswordChecksum;
+        return passwordChecksum != null && passwordChecksum.SequenceEqual(await ComputeChecksum(password));
+    }
+
+    class UserPasswordChecksumOnly
+    {
+        public byte[] PasswordChecksum { get; init; }
     }
 
     public async Task RemoveAccountAsync(string login)
     {
-        var accounts = db.Set<Account>();
-        var accountToRemove = accounts.Find(login);
+        var accountToRemove = Accounts.Find(login);
         if (accountToRemove == null)
         {
             throw new KeyNotFoundException($"Account {login} not found");
         }
-        accounts.Remove(accountToRemove);
+        Accounts.Remove(accountToRemove);
         await db.SaveChangesAsync();
     }
 
-    private async Task<byte[]> ComputeChecksum(string password)
-    {
-        return SHA1.HashData(Encoding.UTF8.GetBytes(password));
-    }
+    private async Task<byte[]> ComputeChecksum(string password) =>
+        await Task.Run(() => SHA1.HashData(Encoding.UTF8.GetBytes(password)));
 }
