@@ -1,31 +1,16 @@
-using Lithium.Api;
-using Lithium.Api.Blog;
-using Lithium.Api.Gallery;
+using Lithium.Api.AspNetCore;
+using Lithium.Api.Accounts.AspNetCore;
+using Lithium.Api.Blog.AspNetCore;
+using Lithium.Api.Galleries.AspNetCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpLogging;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddSingleton<GalleryConfiguration>(sp =>
-    builder.Configuration.GetSection("Gallery").Get<GalleryConfiguration>());
-builder.Services.AddSingleton<BlogConfiguration>(sp =>
-    builder.Configuration.GetSection("Blog").Get<BlogConfiguration>());
-builder.Services.AddDbContext<BlogContext>((sp, opt) =>
-{
-    var cfg = sp.GetRequiredService<BlogConfiguration>();
-    opt.UseSqlite($"Data Source={cfg.DatabasePath}");
-});
-builder.Services.AddDbContext<GalleryContext>((sp, opt) =>
-{
-    var cfg = sp.GetRequiredService<GalleryConfiguration>();
-    opt.UseSqlite($"Data Source={cfg.DatabasePath}");
-});
-builder.Services.AddScoped<IBlogPostRepository, BlogPostRepository>();
-builder.Services.AddScoped<IBlogService, BlogService>();
-builder.Services.AddScoped<IGalleryRepository, GalleryRepository>();
-builder.Services.AddScoped<IGallerySevice, GallerySevice>();
-builder.Services.AddControllers(opt =>
-    opt.Filters.Add(new HttpResponseExceptionFilter()));
+builder.Services.AddAccountsSupport(builder.Configuration);
+builder.Services.AddBlogSupport(builder.Configuration);
+builder.Services.AddGalleriesSupport(builder.Configuration);
+builder.Services.AddControllers(opt => opt.Filters.Add(new HttpResponseExceptionFilter()));
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpLogging(logging =>
@@ -36,6 +21,13 @@ builder.Services.AddHttpLogging(logging =>
     logging.MediaTypeOptions.AddText("application/javascript");
     logging.RequestBodyLogLimit = 4096;
     logging.ResponseBodyLogLimit = 4096;
+});
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminAccess", policy => policy.RequireUserName("roland"));
+    options.AddPolicy("EditorAccess", policy => policy.RequireRole("Editor"));
 });
 
 var app = builder.Build();
@@ -50,6 +42,12 @@ app.UseCors(_ => _
     .AllowAnyHeader()
     .AllowAnyMethod());
 var galleryConfiguration = app.Services.GetRequiredService<GalleryConfiguration>();
+app.UseCookiePolicy(new CookiePolicyOptions
+{
+    MinimumSameSitePolicy = SameSiteMode.Strict,
+});
+app.UseAuthentication();
+app.UseAuthorization();
 app.Configuration.Bind("Gallery", galleryConfiguration);
 app.UseStaticFiles(new StaticFileOptions
 {
@@ -59,4 +57,7 @@ app.UseStaticFiles(new StaticFileOptions
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();
+
+public class FakeEntryPoint { }
