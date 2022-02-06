@@ -3,6 +3,7 @@ using System;
 using Lithium.Api.Galleries;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Lithium.Api.Galleries.Migrations
 {
     [DbContext(typeof(GalleryContext))]
-    partial class GalleryContextModelSnapshot : ModelSnapshot
+    [Migration("20211214161420_AddPhysicalPathForImage")]
+    partial class AddPhysicalPathForImage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.0");
@@ -44,10 +46,6 @@ namespace Lithium.Api.Galleries.Migrations
                     b.Property<Guid?>("GalleryId")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ImageType")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("PhysicalPath")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -68,29 +66,6 @@ namespace Lithium.Api.Galleries.Migrations
                     b.HasOne("Lithium.Api.Galleries.Gallery", null)
                         .WithMany("Images")
                         .HasForeignKey("GalleryId");
-
-                    b.OwnsOne("Lithium.Api.Galleries.ImageResolution", "Resolution", b1 =>
-                        {
-                            b1.Property<Guid>("GalleryImageId")
-                                .HasColumnType("TEXT");
-
-                            b1.Property<int>("Height")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("Height");
-
-                            b1.Property<int>("Width")
-                                .HasColumnType("INTEGER")
-                                .HasColumnName("Width");
-
-                            b1.HasKey("GalleryImageId");
-
-                            b1.ToTable("GalleryImage");
-
-                            b1.WithOwner()
-                                .HasForeignKey("GalleryImageId");
-                        });
-
-                    b.Navigation("Resolution");
                 });
 
             modelBuilder.Entity("Lithium.Api.Galleries.Gallery", b =>

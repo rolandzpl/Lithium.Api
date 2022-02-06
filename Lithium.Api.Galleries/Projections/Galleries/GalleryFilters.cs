@@ -1,8 +1,8 @@
 using LinqSpecs;
 
-namespace Lithium.Api.Galleries;
+namespace Lithium.Api.Galleries.Projections.Galleries;
 
-class GalleryFilters
+public class GalleryFilters
 {
     public static Specification<Gallery> FilterDefault() =>
         new AdHocSpecification<Gallery>(_ => true);
