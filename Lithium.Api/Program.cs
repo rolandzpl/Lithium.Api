@@ -5,6 +5,13 @@ using Lithium.Api.Galleries.AspNetCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.Extensions.FileProviders;
+using Mapster;
+
+TypeAdapterConfig.GlobalSettings.ForType<
+    Lithium.Api.Galleries.Projections.ImagesByGallery.ImageDto,
+    Lithium.Api.Controllers.Dto.ImageDto>()
+    .Map(_ => _.ImageId, _ => _.Id)
+    .Map(_ => _.ImageUrl, _ => "/");
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAccountsSupport(builder.Configuration);
@@ -49,11 +56,12 @@ app.UseCookiePolicy(new CookiePolicyOptions
 app.UseAuthentication();
 app.UseAuthorization();
 app.Configuration.Bind("Gallery", galleryConfiguration);
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider(galleryConfiguration.RootDirectory),
-    RequestPath = galleryConfiguration.BaseUrl
-});
+// app.UseStaticFiles(new StaticFileOptions
+// {
+//     FileProvider = new GalleryImageFileProvider(
+//         app.Services.GetRequiredService<Lithium.Api.Galleries.Projections.Images.IImagesProjection>()),
+//     RequestPath = galleryConfiguration.BaseUrl
+// });
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
