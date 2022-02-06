@@ -1,0 +1,11 @@
+﻿@using MyApp.Namespace
+@model IEnumerable<GalleryModel.ImageItem>
+
+@{
+    <div class="container1">
+        @foreach (var img in @Model)
+        {
+            <img src="@img.ImageUrl?width=320" />
+        }
+    </div>
+}

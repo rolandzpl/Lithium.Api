@@ -1,0 +1,24 @@
+﻿@page "{selectedGallery?}"
+@model MyApp.Namespace.GalleryModel
+@{
+    ViewData["Title"] = "Gallery";
+}
+
+@{
+    <ul>
+        @foreach (var gal in Model.Galleries)
+        {
+                <li>
+                    <a href="@gal.Url">
+                        <img class="gallery-list-image gallery-cover-image" src="@gal.CoverImageUrl?width=320" />
+                    </a>
+                </li>
+        }
+    </ul>
+}
+
+@if (Model.SelectedGallery != Guid.Empty)
+{
+    await Html.RenderPartialAsync("_Images", Model.Images);
+}
+
